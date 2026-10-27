@@ -22,7 +22,7 @@ func recupererArtistes() []Artiste {
 	}
 	defer reponse.Body.Close()
 
-	// JSON en liste d'artistes
+	//JSON en liste d'artistes
 	var artistes []Artiste
 	json.NewDecoder(reponse.Body).Decode(&artistes)
 	return artistes

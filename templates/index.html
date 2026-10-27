@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Groupie Tracker</title>
+</head>
+<body>
+    <h1>Bienvenue sur Groupie Tracker !</h1>
+
+    {{range .}}
+    <div>
+        <img src="{{.Image}}" alt="{{.Name}}" width="150">
+        <h2>{{.Name}}</h2>
+        <p>Création : {{.CreationDate}}</p>
+        <p>Premier album : {{.FirstAlbum}}</p>
+    </div>
+    {{end}}
+</body>
+</html>
