@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Name}}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    {{if gt .ID 1}}<button onclick="changer(-1)">Artiste précédent</button>{{end}}
+    {{if lt .ID 52}}<button onclick="changer(1)">Artiste suivant</button>{{end}}
+    <p><a href="/">Retour à l'accueil</a></p>
+
+    <h1>{{.Name}}</h1>
+    <img src="{{.Image}}" alt="{{.Name}}" width="250">
+    <p>Création : {{.CreationDate}}</p>
+    <p>Premier album : {{.FirstAlbum}}</p>
+
+    <h2>Membres</h2>
+    <ul>
+        {{range .Members}}
+        <li>{{.}}</li>
+        {{end}}
+    </ul>
+
+    <h2>Concerts</h2>
+    <ul>
+        {{range $lieu, $dates := .Concerts}}
+        <li><span class="lieu">{{$lieu}}</span> : {{range $dates}}{{.}} {{end}}</li>
+        {{end}}
+    </ul>
+
+    <h2>Carte</h2>
+    <div id="carte" style="height: 400px"></div>
+
+    <script>
+        const concerts = {{.Concerts}};
+
+        function changer(nombre) {
+            location.href = "/artiste?id=" + ({{.ID}} + nombre);
+        }
+
+        function nomLieu(lieu) {
+            return lieu.replaceAll("_", " ").replaceAll("-", ", ");
+        }
+
+        for (const element of document.querySelectorAll(".lieu")) {
+            element.textContent = nomLieu(element.textContent);
+        }
+
+        const carte = L.map("carte").setView([20, 0], 2);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap"
+        }).addTo(carte);
+
+        async function chercherPosition(lieu) {
+            const gardee = localStorage.getItem(lieu);
+            if (gardee) {
+                return JSON.parse(gardee);
+            }
+            await new Promise(suite => setTimeout(suite, 1000));
+            const reponse = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(nomLieu(lieu)));
+            const resultats = await reponse.json();
+            if (resultats.length === 0) {
+                return null;
+            }
+            const position = [resultats[0].lat, resultats[0].lon];
+            localStorage.setItem(lieu, JSON.stringify(position));
+            return position;
+        }
+
+        async function placerLieux() {
+            for (const lieu in concerts) {
+                try {
+                    const position = await chercherPosition(lieu);
+                    if (position) {
+                        const repere = L.marker(position);
+                        repere.addTo(carte);
+                        repere.bindPopup(nomLieu(lieu) + " : " + concerts[lieu].join(", "));
+                    }
+                } catch (erreur) {
+                    console.log(lieu, erreur);
+                }
+            }
+        }
+        placerLieux();
+    </script>
+</body>
+</html>

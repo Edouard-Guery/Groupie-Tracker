@@ -7,13 +7,54 @@
 <body>
     <h1>Bienvenue sur Groupie Tracker !</h1>
 
+    <form action="/" onsubmit="preparer()">
+        <p>Création entre <input type="number" name="creationMin"> et <input type="number" name="creationMax"></p>
+        <p>Premier album entre <input type="number" name="albumMin"> et <input type="number" name="albumMax"></p>
+        <p>
+            Nombre de membres :
+            <input type="checkbox" value="1"> 1
+            <input type="checkbox" value="2"> 2
+            <input type="checkbox" value="3"> 3
+            <input type="checkbox" value="4"> 4
+            <input type="checkbox" value="5"> 5
+            <input type="checkbox" value="6"> 6
+            <input type="checkbox" value="7"> 7
+            <input type="checkbox" value="8"> 8
+            <input type="hidden" name="membres" id="membres">
+        </p>
+        <p>
+            Lieu de concert : <input type="text" id="texteLieu">
+            <input type="hidden" name="lieu" id="lieu">
+        </p>
+        <button>Filtrer</button>
+        <a href="/">Effacer les filtres</a>
+    </form>
+
+    <p>{{len .}} artiste(s)</p>
+
     {{range .}}
     <div>
-        <img src="{{.Image}}" alt="{{.Name}}" width="150">
-        <h2>{{.Name}}</h2>
+        <a href="/artiste?id={{.ID}}">
+            <img src="{{.Image}}" alt="{{.Name}}" width="150">
+            <h2>{{.Name}}</h2>
+        </a>
         <p>Création : {{.CreationDate}}</p>
         <p>Premier album : {{.FirstAlbum}}</p>
     </div>
     {{end}}
+
+    <script>
+        function preparer() {
+            let membres = "";
+            for (const caseCochee of document.querySelectorAll("input:checked")) {
+                membres += caseCochee.value;
+            }
+            document.getElementById("membres").value = membres;
+
+            let lieu = document.getElementById("texteLieu").value.trim().toLowerCase();
+            lieu = lieu.replaceAll(", ", "-").replaceAll(" ", "_");
+            document.getElementById("lieu").value = lieu;
+        }
+    </script>
 </body>
 </html>

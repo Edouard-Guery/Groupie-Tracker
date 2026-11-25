@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -12,20 +13,40 @@ type Artiste struct {
 	Members      []string `json:"members"`
 	CreationDate int      `json:"creationDate"`
 	FirstAlbum   string   `json:"firstAlbum"`
+	Concerts     map[string][]string
 }
 
-// recupererArtistes va chercher les artistes
-func recupererArtistes() []Artiste {
+type Relation struct {
+	DatesLocations map[string][]string `json:"datesLocations"`
+}
+
+type Relations struct {
+	Index []Relation `json:"index"`
+}
+
+var artistes []Artiste
+var relations Relations
+
+func chargerArtistes() {
 	reponse, err := http.Get("https://groupietrackers.01edu.ai/api/artists")
 	if err != nil {
-		return nil
+		fmt.Println("Erreur API")
+		return
 	}
-	defer reponse.Body.Close()
-
-	//JSON en liste d'artistes
-	var artistes []Artiste
 	json.NewDecoder(reponse.Body).Decode(&artistes)
-	return artistes
+	reponse.Body.Close()
 }
 
-// func
+func chargerConcerts() {
+	reponse, err := http.Get("https://groupietrackers.01edu.ai/api/relation")
+	if err != nil {
+		fmt.Println("Erreur API")
+		return
+	}
+	json.NewDecoder(reponse.Body).Decode(&relations)
+	reponse.Body.Close()
+
+	for i, relation := range relations.Index {
+		artistes[i].Concerts = relation.DatesLocations
+	}
+}
