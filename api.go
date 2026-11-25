@@ -16,7 +16,7 @@ type Artiste struct {
 
 // recupererArtistes va chercher les artistes
 func recupererArtistes() []Artiste {
-	reponse, err := http.Get("https://groupietrackers.herokuapp.com/api/artists")
+	reponse, err := http.Get("https://groupietrackers.01edu.ai/api/artists")
 	if err != nil {
 		return nil
 	}

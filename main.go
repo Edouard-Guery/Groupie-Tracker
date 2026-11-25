@@ -24,3 +24,5 @@ func accueil(w http.ResponseWriter, r *http.Request) {
 	artistes := recupererArtistes()
 	page.Execute(w, artistes)
 }
+
+//
