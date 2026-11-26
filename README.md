@@ -11,6 +11,10 @@ Le but est de récupérer les données de l'API [Groupie Trackers](https://group
 
 **Côté Go :** uniquement la bibliothèque standard (aucun package externe).
 
+### 👥 Équipe
+* **Edouard GUERY**
+* **Gabriel ANTUNES**
+
 ---
 
 ## 🚀 Fonctionnalités
