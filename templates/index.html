@@ -3,58 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <title>Groupie Tracker</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=Figtree:wght@400;600&display=swap">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <h1>Bienvenue sur Groupie Tracker !</h1>
+    <header>
+        <a class="logo" href="/">Groupie Tracker</a>
+    </header>
 
-    <form action="/" onsubmit="preparer()">
-        <p>Création entre <input type="number" name="creationMin"> et <input type="number" name="creationMax"></p>
-        <p>Premier album entre <input type="number" name="albumMin"> et <input type="number" name="albumMax"></p>
-        <p>
-            Nombre de membres :
-            <input type="checkbox" value="1"> 1
-            <input type="checkbox" value="2"> 2
-            <input type="checkbox" value="3"> 3
-            <input type="checkbox" value="4"> 4
-            <input type="checkbox" value="5"> 5
-            <input type="checkbox" value="6"> 6
-            <input type="checkbox" value="7"> 7
-            <input type="checkbox" value="8"> 8
-            <input type="hidden" name="membres" id="membres">
-        </p>
-        <p>
-            Lieu de concert : <input type="text" id="texteLieu">
-            <input type="hidden" name="lieu" id="lieu">
-        </p>
-        <button>Filtrer</button>
-        <a href="/">Effacer les filtres</a>
-    </form>
+    <main class="accueil">
+        <!-- Filtres -->
+        <form action="/" id="filtres">
+            <h2>Filtres</h2>
 
-    <p>{{len .}} artiste(s)</p>
+            <p>Année de création</p>
+            <div class="entre">
+                <input type="number" name="creationMin" value="{{.Choix.Get "creationMin"}}" placeholder="de" aria-label="Création, de">
+                <input type="number" name="creationMax" value="{{.Choix.Get "creationMax"}}" placeholder="à" aria-label="Création, à">
+            </div>
 
-    {{range .}}
-    <div>
-        <a href="/artiste?id={{.ID}}">
-            <img src="{{.Image}}" alt="{{.Name}}" width="150">
-            <h2>{{.Name}}</h2>
-        </a>
-        <p>Création : {{.CreationDate}}</p>
-        <p>Premier album : {{.FirstAlbum}}</p>
-    </div>
-    {{end}}
+            <p>Premier album</p>
+            <div class="entre">
+                <input type="number" name="albumMin" value="{{.Choix.Get "albumMin"}}" placeholder="de" aria-label="Premier album, de">
+                <input type="number" name="albumMax" value="{{.Choix.Get "albumMax"}}" placeholder="à" aria-label="Premier album, à">
+            </div>
 
-    <script>
-        function preparer() {
-            let membres = "";
-            for (const caseCochee of document.querySelectorAll("input:checked")) {
-                membres += caseCochee.value;
-            }
-            document.getElementById("membres").value = membres;
+            <p>Nombre de membres</p>
+            <div class="membres">
+                <label><input type="checkbox" name="membres" value="1" {{if index .Coches "1"}}checked{{end}}>1</label>
+                <label><input type="checkbox" name="membres" value="2" {{if index .Coches "2"}}checked{{end}}>2</label>
+                <label><input type="checkbox" name="membres" value="3" {{if index .Coches "3"}}checked{{end}}>3</label>
+                <label><input type="checkbox" name="membres" value="4" {{if index .Coches "4"}}checked{{end}}>4</label>
+                <label><input type="checkbox" name="membres" value="5" {{if index .Coches "5"}}checked{{end}}>5</label>
+                <label><input type="checkbox" name="membres" value="6" {{if index .Coches "6"}}checked{{end}}>6</label>
+                <label><input type="checkbox" name="membres" value="7" {{if index .Coches "7"}}checked{{end}}>7</label>
+                <label><input type="checkbox" name="membres" value="8" {{if index .Coches "8"}}checked{{end}}>8+</label>
+            </div>
 
-            let lieu = document.getElementById("texteLieu").value.trim().toLowerCase();
-            lieu = lieu.replaceAll(", ", "-").replaceAll(" ", "_");
-            document.getElementById("lieu").value = lieu;
-        }
-    </script>
+            <p>Lieu de concert</p>
+            <input type="text" name="lieu" value="{{.Choix.Get "lieu"}}" placeholder="Osaka, Japan" aria-label="Lieu de concert">
+
+            <button>Filtrer</button>
+            <a href="/">Effacer les filtres</a>
+        </form>
+
+        <section>
+            <h1>Les artistes</h1>
+            <!-- Barre de recherche -->
+            <div class="recherche">
+                <input type="search" name="recherche" form="filtres" value="{{.Choix.Get "recherche"}}" accesskey="r" placeholder="Artiste, membre, lieu, date..." aria-label="Rechercher">
+                <button form="filtres">Rechercher</button>
+            </div>
+            <p>{{len .Artistes}} artiste(s)</p>
+            {{if not .Artistes}}<p>Aucun artiste trouvé. <a href="/">Tout afficher</a></p>{{end}}
+
+            <!-- Une carte par artiste -->
+            <div class="grille">
+                {{range .Artistes}}
+                <a class="artiste" href="/artiste?id={{.ID}}">
+                    <img src="{{.Image}}" alt="">
+                    <h2>{{.Name}}</h2>
+                    <p>Depuis {{.CreationDate}}</p>
+                    <p>Album : {{.FirstAlbum}}</p>
+                </a>
+                {{end}}
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Projet de groupe réalisé dans le cadre de notre formation à Ynov.</p>
+        <p>Données : <a href="https://groupietrackers.01edu.ai/api">API Groupie Trackers</a></p>
+    </footer>
 </body>
 </html>

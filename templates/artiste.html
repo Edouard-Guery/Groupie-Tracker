@@ -2,88 +2,111 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{{.Name}}</title>
+    <title>{{.Artiste.Name}}</title>
+    <meta name="viewport" content="width=device-width">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=Figtree:wght@400;600&display=swap">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    {{if gt .ID 1}}<button onclick="changer(-1)">Artiste précédent</button>{{end}}
-    {{if lt .ID 52}}<button onclick="changer(1)">Artiste suivant</button>{{end}}
-    <p><a href="/">Retour à l'accueil</a></p>
+    <header>
+        <a class="logo" href="/">Groupie Tracker</a>
+        <a accesskey="h" href="/">Retour à l'accueil</a>
+    </header>
 
-    <h1>{{.Name}}</h1>
-    <img src="{{.Image}}" alt="{{.Name}}" width="250">
-    <p>Création : {{.CreationDate}}</p>
-    <p>Premier album : {{.FirstAlbum}}</p>
+    <!-- Bannière avec l'image floutée en fond -->
+    <div class="banniere">
+        <img class="fond" src="{{.Artiste.Image}}" alt="">
+        <img class="photo" src="{{.Artiste.Image}}" alt="{{.Artiste.Name}}">
+        <div>
+            <h1>{{.Artiste.Name}}</h1>
+            <p>Création : {{.Artiste.CreationDate}}</p>
+            <p>Premier album : {{.Artiste.FirstAlbum}}</p>
+            <p>{{len .Artiste.Dates}} date(s) dans {{len .Artiste.Lieux}} lieu(x)</p>
+        </div>
+    </div>
 
-    <h2>Membres</h2>
-    <ul>
-        {{range .Members}}
-        <li>{{.}}</li>
-        {{end}}
-    </ul>
+    <main>
+        <h2>Membres</h2>
+        <ul class="noms">
+            {{range .Artiste.Members}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
 
-    <h2>Concerts</h2>
-    <ul>
-        {{range $lieu, $dates := .Concerts}}
-        <li><span class="lieu">{{$lieu}}</span> : {{range $dates}}{{.}} {{end}}</li>
-        {{end}}
-    </ul>
+        <!-- Lecteur Deezer, caché si aucun artiste n'est trouvé -->
+        <div id="musique" hidden>
+            <h2>Musique</h2>
+            <iframe id="lecteur" title="Lecteur Deezer" allow="encrypted-media"></iframe>
+        </div>
 
-    <h2>Carte</h2>
-    <div id="carte" style="height: 400px"></div>
+        <h2>Concerts</h2>
+        <ul>
+            {{range $lieu, $dates := .Artiste.Concerts}}
+            <li class="concert"><span class="lieu">{{$lieu}}</span> {{range $dates}}<span>{{.}}</span> {{end}}</li>
+            {{end}}
+        </ul>
+
+        <h2>Carte</h2>
+        <div id="carte"></div>
+
+        <!-- Artiste précédent et suivant -->
+        <nav>
+            {{if .Precedent.ID}}
+            <a accesskey="p" href="/artiste?id={{.Precedent.ID}}">Artiste précédent <strong>{{.Precedent.Name}}</strong></a>
+            {{end}}
+            {{if .Suivant.ID}}
+            <a class="suivant" accesskey="s" href="/artiste?id={{.Suivant.ID}}">Artiste suivant <strong>{{.Suivant.Name}}</strong></a>
+            {{end}}
+        </nav>
+    </main>
+
+    <footer>
+        <p>Projet de groupe réalisé dans le cadre de notre formation à Ynov.</p>
+        <p>Données : <a href="https://groupietrackers.01edu.ai/api">API Groupie Trackers</a></p>
+    </footer>
 
     <script>
-        const concerts = {{.Concerts}};
+        const concerts = {{.Artiste.Concerts}};
 
-        function changer(nombre) {
-            location.href = "/artiste?id=" + ({{.ID}} + nombre);
-        }
-
+        // Transforme "osaka-japan" en "osaka, japan"
         function nomLieu(lieu) {
             return lieu.replaceAll("_", " ").replaceAll("-", ", ");
+        }
+
+        // Affiche le lecteur Deezer de l'artiste trouvé
+        function afficherMusique(reponse) {
+            if (reponse.data && reponse.data.length > 0) {
+                document.getElementById("musique").hidden = false;
+                document.getElementById("lecteur").src = "https://widget.deezer.com/widget/light/artist/" + reponse.data[0].id + "/top_tracks";
+            }
+        }
+
+        // Demande à Go la position de chaque lieu et ajoute un repère sur la carte
+        async function placerLieux() {
+            for (const lieu in concerts) {
+                const reponse = await fetch("/coords?lieu=" + lieu);
+                const position = await reponse.json();
+                if (position.Lat !== "") {
+                    L.marker([position.Lat, position.Lon]).addTo(carte).bindPopup(nomLieu(lieu) + " : " + concerts[lieu].join(", "));
+                }
+            }
         }
 
         for (const element of document.querySelectorAll(".lieu")) {
             element.textContent = nomLieu(element.textContent);
         }
 
+        // Crée la carte
         const carte = L.map("carte").setView([20, 0], 2);
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "&copy; OpenStreetMap"
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(carte);
 
-        async function chercherPosition(lieu) {
-            const gardee = localStorage.getItem(lieu);
-            if (gardee) {
-                return JSON.parse(gardee);
-            }
-            await new Promise(suite => setTimeout(suite, 1000));
-            const reponse = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(nomLieu(lieu)));
-            const resultats = await reponse.json();
-            if (resultats.length === 0) {
-                return null;
-            }
-            const position = [resultats[0].lat, resultats[0].lon];
-            localStorage.setItem(lieu, JSON.stringify(position));
-            return position;
-        }
-
-        async function placerLieux() {
-            for (const lieu in concerts) {
-                try {
-                    const position = await chercherPosition(lieu);
-                    if (position) {
-                        const repere = L.marker(position);
-                        repere.addTo(carte);
-                        repere.bindPopup(nomLieu(lieu) + " : " + concerts[lieu].join(", "));
-                    }
-                } catch (erreur) {
-                    console.log(lieu, erreur);
-                }
-            }
-        }
-        placerLieux();
+        placerLieux().catch(erreur => console.log("Carte :", erreur));
     </script>
+    <!-- Cherche l'artiste sur Deezer, puis appelle afficherMusique -->
+    <script src="https://api.deezer.com/search/artist?limit=1&output=jsonp&callback=afficherMusique&q={{.Artiste.Name}}"></script>
 </body>
 </html>
